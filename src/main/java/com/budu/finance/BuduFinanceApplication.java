@@ -28,13 +28,34 @@ public class BuduFinanceApplication {
         return args -> {
             // ==================== 1. 初始化 User ====================
             if (userRepository.count() == 0) {
-                User husband = User.builder().name("丈夫").role(UserRole.HUSBAND).build();
-                User wife = User.builder().name("妻子").role(UserRole.WIFE).build();
-                User husbandParent = User.builder().name("丈夫父母").role(UserRole.PARENT).build();
-                User wifeParent = User.builder().name("妻子父母").role(UserRole.PARENT).build();
+                User husband = User.builder()
+                        .name("dudu")
+                        .role(UserRole.HUSBAND)
+                        .password("123456")
+                        .build();
+
+                User wife = User.builder()
+                        .name("bubu")
+                        .role(UserRole.WIFE)
+                        .password("123456")
+                        .build();
+
+                User husbandParent = User.builder()
+                        .name("duduP")
+                        .role(UserRole.PARENT)
+                        .password("123456")
+                        .build();
+
+                User wifeParent = User.builder()
+                        .name("bubuP")
+                        .role(UserRole.PARENT)
+                        .password("123456")
+                        .build();
 
                 userRepository.saveAll(List.of(husband, wife, husbandParent, wifeParent));
-                System.out.println("✅ 用戶初始化完成");
+                System.out.println("✅ 用戶初始化完成（英文帳號）");
+            } else {
+                System.out.println("✅ 用戶已存在，跳過初始化");
             }
 
             // ==================== 2. 初始化 Category ====================

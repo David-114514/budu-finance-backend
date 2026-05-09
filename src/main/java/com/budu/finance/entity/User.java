@@ -9,9 +9,9 @@ import java.time.LocalDateTime;
 @Table(name = "user")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class User {
 
     @Id
@@ -25,7 +25,7 @@ public class User {
     @Column(nullable = false)
     private UserRole role;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false, length = 20)
+    private String password = "123456";
 }
 
