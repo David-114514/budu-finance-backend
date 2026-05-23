@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -121,5 +122,14 @@ public class FinanceController {
                         .build())
                 .toList();
         return ResponseEntity.ok(categories);
+    }
+
+    @GetMapping("/dashboard/monthly-transfer")
+    public ResponseEntity<List<Map<String, Object>>> getMonthlyTransfer(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+
+        List<Map<String, Object>> result = dashboardService.getMonthlyTransfer(start, end);
+        return ResponseEntity.ok(result);
     }
 }

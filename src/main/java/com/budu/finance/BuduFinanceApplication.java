@@ -61,16 +61,11 @@ public class BuduFinanceApplication {
             // ==================== 2. 初始化 Category ====================
             if (categoryRepository.count() == 0) {
                 List<Category> categories = List.of(
-                        Category.builder().name("薪資收入").type(CategoryType.INCOME).icon("💰").build(),
-                        Category.builder().name("轉入抵銷戶口").type(CategoryType.TRANSFER).icon("🏦").build(),
-                        Category.builder().name("父母抵銷存款").type(CategoryType.PARENT_CONTRIB).icon("👨‍👩‍👧").build(),
-                        Category.builder().name("利息節省返還父母").type(CategoryType.PARENT_REPAY).icon("🔄").build(),
-                        Category.builder().name("家用開支").type(CategoryType.EXPENSE).icon("🛒").build(),
-                        Category.builder().name("家電購置").type(CategoryType.EXPENSE).icon("📱").build(),
-                        Category.builder().name("中介及律師費").type(CategoryType.EXPENSE).icon("📄").build()
+                        Category.builder().name("轉入按揭戶口").type(CategoryType.TRANSFER).icon("🏦").build(),
+                        Category.builder().name("按揭戶口支出").type(CategoryType.EXPENSE).icon("🛒").build()
                 );
                 categoryRepository.saveAll(categories);
-                System.out.println("✅ 類別初始化完成");
+                System.out.println("✅ 類別初始化完成（極簡 2 類別）");
             }
 
             // ==================== 3. 初始化 Account ====================

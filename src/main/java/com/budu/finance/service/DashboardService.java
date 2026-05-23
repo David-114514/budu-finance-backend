@@ -1,19 +1,18 @@
 package com.budu.finance.service;
 
 import com.budu.finance.dto.DashboardResponse;
-import com.budu.finance.entity.Account;
-import com.budu.finance.entity.AccountType;
-import com.budu.finance.entity.MortgageSummary;
-import com.budu.finance.repository.AccountRepository;
-import com.budu.finance.repository.MortgageSummaryRepository;
-import com.budu.finance.repository.TransactionRepository;
+import com.budu.finance.entity.*;
+import com.budu.finance.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +21,7 @@ public class DashboardService {
     private final AccountRepository accountRepository;
     private final MortgageSummaryRepository mortgageSummaryRepository;
     private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
 
     public DashboardResponse getDashboard() {
         // 取得按揭與抵銷帳戶
@@ -35,26 +35,25 @@ public class DashboardService {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Offset account not found"));
 
-        // 取得最新按揭總覽（如果沒有，則建立一筆）
+        // 取得最新按揭總覽
         MortgageSummary summary = mortgageSummaryRepository.findTopByOrderByReportDateDesc();
         if (summary == null) {
             summary = MortgageSummary.builder()
                     .reportDate(LocalDate.now())
                     .mortgageBalance(mortgageAccount.getCurrentBalance())
                     .offsetTotal(offsetAccount.getCurrentBalance())
-                    .parentsInOffset(BigDecimal.ZERO)           // 暫時手動維護
-                    .totalParentContribution(new BigDecimal("1200000"))  // 初始首付120萬
+                    .parentsInOffset(BigDecimal.ZERO)
+                    .totalParentContribution(new BigDecimal("1200000"))
                     .build();
             summary = mortgageSummaryRepository.save(summary);
         }
 
-        BigDecimal effectiveDebt = summary.getEffectiveDebt() != null ?
-                summary.getEffectiveDebt() :
-                mortgageAccount.getCurrentBalance().subtract(offsetAccount.getCurrentBalance());
+        BigDecimal effectiveDebt = summary.getEffectiveDebt() != null
+                ? summary.getEffectiveDebt()
+                : mortgageAccount.getCurrentBalance().subtract(offsetAccount.getCurrentBalance());
 
-        // 本月夫妻轉入（簡化版，可後續優化）
-        LocalDate now = LocalDate.now();
-        LocalDate monthStart = now.withDayOfMonth(1);
+        // ==================== B方案：計算個人剩餘金額 ====================
+        List<DashboardResponse.PersonalBalance> personalBalances = calculatePersonalBalances();
 
         return DashboardResponse.builder()
                 .mortgageBalance(mortgageAccount.getCurrentBalance())
@@ -62,11 +61,35 @@ public class DashboardService {
                 .parentsInOffset(summary.getParentsInOffset())
                 .effectiveDebt(effectiveDebt)
                 .totalParentContribution(summary.getTotalParentContribution())
-                .thisMonthCoupleTransfer(BigDecimal.ZERO)   // 後續可從 transaction 計算
+                .thisMonthCoupleTransfer(BigDecimal.ZERO)
+                .personalBalances(personalBalances)   // ← 新增
                 .build();
     }
 
-    // 每月手動更新按揭總覽（你從銀行 App 複製數據後呼叫）
+    private List<DashboardResponse.PersonalBalance> calculatePersonalBalances() {
+        List<Transaction> allTransactions = transactionRepository.findAll();
+
+        // 只計算正數交易（存入總額），負數交易（支出）不計入貢獻
+        Map<Long, BigDecimal> contributionMap = allTransactions.stream()
+                .filter(t -> t.getUser() != null && t.getAmount().compareTo(BigDecimal.ZERO) > 0)
+                .collect(Collectors.groupingBy(
+                        t -> t.getUser().getId(),
+                        Collectors.reducing(
+                                BigDecimal.ZERO,
+                                t -> t.getAmount(),
+                                BigDecimal::add
+                        )
+                ));
+
+        return userRepository.findAll().stream()
+                .map(user -> DashboardResponse.PersonalBalance.builder()
+                        .userId(user.getId())
+                        .userName(user.getName())
+                        .balance(contributionMap.getOrDefault(user.getId(), BigDecimal.ZERO))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public void updateMortgageSummary(BigDecimal mortgageBalance, BigDecimal offsetTotal,
                                       BigDecimal parentsInOffset, BigDecimal parentContribution) {
@@ -78,5 +101,31 @@ public class DashboardService {
                 .totalParentContribution(parentContribution)
                 .build();
         mortgageSummaryRepository.save(summary);
+    }
+
+    /**
+     * 查詢指定日期範圍內「轉入按揭戶口」的總金額（按月分組）
+     */
+    public List<Map<String, Object>> getMonthlyTransfer(LocalDate start, LocalDate end) {
+        List<Transaction> transactions = transactionRepository.findByDateBetweenAndCategoryName(
+                start, end, "轉入按揭戶口"
+        );
+
+        // 按月份分組統計
+        Map<String, BigDecimal> monthlyMap = transactions.stream()
+                .collect(Collectors.groupingBy(
+                        t -> t.getDate().getYear() + "-" + String.format("%02d", t.getDate().getMonthValue()),
+                        Collectors.reducing(BigDecimal.ZERO, Transaction::getAmount, BigDecimal::add)
+                ));
+
+        return monthlyMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("month", entry.getKey());
+                    map.put("amount", entry.getValue());
+                    return map;
+                })
+                .collect(Collectors.toList());
     }
 }
