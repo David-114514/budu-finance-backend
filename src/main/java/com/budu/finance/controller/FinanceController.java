@@ -77,19 +77,6 @@ public class FinanceController {
         return ResponseEntity.ok(accounts);
     }
 
-    // ==================== Mortgage Summary ====================
-    // 每月從銀行 App 複製數據後，手動更新按揭總覽
-    @PostMapping("/mortgage-summary")
-    public ResponseEntity<String> updateMortgageSummary(
-            @RequestParam BigDecimal mortgageBalance,
-            @RequestParam BigDecimal offsetTotal,
-            @RequestParam BigDecimal parentsInOffset,
-            @RequestParam BigDecimal totalParentContribution) {
-
-        dashboardService.updateMortgageSummary(mortgageBalance, offsetTotal, parentsInOffset, totalParentContribution);
-        return ResponseEntity.ok("Mortgage summary updated successfully");
-    }
-
     // 簡單健康檢查
     @GetMapping("/health")
     public ResponseEntity<String> health() {

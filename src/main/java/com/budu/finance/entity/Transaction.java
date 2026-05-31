@@ -23,14 +23,6 @@ public class Transaction {
     private BigDecimal amount;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "from_account_id")
-    private Account fromAccount;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "to_account_id")
-    private Account toAccount;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
@@ -38,15 +30,18 @@ public class Transaction {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;                    // 操作者（丈夫/妻子）
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contributor_id")
-    private User contributor;             // 貢獻者（父母時使用）
-
     private String description;
 
     @Column(precision = 10, scale = 2)
     private BigDecimal mortgageInterestSaved = BigDecimal.ZERO;
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

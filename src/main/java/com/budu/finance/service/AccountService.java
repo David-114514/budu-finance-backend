@@ -27,6 +27,14 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Account not found: " + id));
     }
 
+    // ==================== 新增這個方法 ====================
+    public Account findByName(String name) {
+        return accountRepository.findAll().stream()
+                .filter(a -> a.getName().equals(name))
+                .findFirst()
+                .orElse(null);
+    }
+
     @Transactional
     public void updateBalance(Long accountId, BigDecimal delta) {
         Account account = findById(accountId);

@@ -31,34 +31,22 @@ public class TransactionService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
-        Account fromAccount = request.getFromAccountId() != null ?
-                accountService.findById(request.getFromAccountId()) : null;
-
-        Account toAccount = request.getToAccountId() != null ?
-                accountService.findById(request.getToAccountId()) : null;
-
-        // 建立交易記錄
+        // 建立交易記錄（已刪除 contributor 相關）
         Transaction transaction = Transaction.builder()
                 .date(request.getDate())
                 .amount(request.getAmount())
-                .fromAccount(fromAccount)
-                .toAccount(toAccount)
                 .category(category)
                 .user(user)
-                .contributor(request.getContributorId() != null ?
-                        userRepository.findById(request.getContributorId()).orElse(null) : null)
                 .description(request.getDescription())
                 .mortgageInterestSaved(request.getMortgageInterestSaved())
                 .build();
 
         transaction = transactionRepository.save(transaction);
 
-        // 更新帳戶餘額
-        if (fromAccount != null) {
-            accountService.updateBalance(fromAccount.getId(), request.getAmount().negate());
-        }
-        if (toAccount != null) {
-            accountService.updateBalance(toAccount.getId(), request.getAmount());
+        // 更新當前餘額帳戶
+        Account currentBalanceAccount = accountService.findByName("CurrentBalance");
+        if (currentBalanceAccount != null) {
+            accountService.updateBalance(currentBalanceAccount.getId(), request.getAmount());
         }
 
         return toResponse(transaction);
@@ -77,16 +65,10 @@ public class TransactionService {
                 .date(t.getDate())
                 .amount(t.getAmount())
                 .description(t.getDescription())
-                .fromAccountId(t.getFromAccount() != null ? t.getFromAccount().getId() : null)
-                .fromAccountName(t.getFromAccount() != null ? t.getFromAccount().getName() : null)
-                .toAccountId(t.getToAccount() != null ? t.getToAccount().getId() : null)
-                .toAccountName(t.getToAccount() != null ? t.getToAccount().getName() : null)
                 .categoryId(t.getCategory().getId())
                 .categoryName(t.getCategory().getName())
                 .userId(t.getUser().getId())
                 .userName(t.getUser().getName())
-                .contributorId(t.getContributor() != null ? t.getContributor().getId() : null)
-                .contributorName(t.getContributor() != null ? t.getContributor().getName() : null)
                 .mortgageInterestSaved(t.getMortgageInterestSaved())
                 .build();
     }

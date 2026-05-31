@@ -69,30 +69,14 @@ public class BuduFinanceApplication {
             }
 
             // ==================== 3. 初始化 Account ====================
-            if (accountRepository.count() == 0 || accountRepository.count() < 3) {
-                // Mortgage Loan
-                Account mortgage = Account.builder()
-                        .name("Mortgage Loan")
-                        .type(AccountType.LIABILITY)
-                        .currentBalance(new BigDecimal("2800000.00"))
-                        .build();
-
-                // Offset Account
-                Account offset = Account.builder()
-                        .name("Offset Account")
+            if (accountRepository.count() == 0) {
+                Account currentBalance = Account.builder()
+                        .name("CurrentBalance")
                         .type(AccountType.OFFSET)
                         .currentBalance(BigDecimal.ZERO)
                         .build();
-
-                // Salary / 現金帳戶
-                Account salary = Account.builder()
-                        .name("Salary Account")
-                        .type(AccountType.ASSET)
-                        .currentBalance(BigDecimal.ZERO)
-                        .build();
-
-                accountRepository.saveAll(List.of(mortgage, offset, salary));
-                System.out.println("✅ 帳戶初始化完成");
+                accountRepository.save(currentBalance);
+                System.out.println("✅ 當前餘額帳戶初始化完成");
             }
 
             System.out.println("🎉 Budu Finance 後端初始化資料完成！可以開始使用了！");

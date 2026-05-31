@@ -19,50 +19,22 @@ import java.util.stream.Collectors;
 public class DashboardService {
 
     private final AccountRepository accountRepository;
-    private final MortgageSummaryRepository mortgageSummaryRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
 
     public DashboardResponse getDashboard() {
-        // 取得按揭與抵銷帳戶
-        Account mortgageAccount = accountRepository.findAll().stream()
-                .filter(a -> a.getType() == AccountType.LIABILITY && a.getName().contains("Mortgage"))
+        // 取得當前餘額帳戶
+        Account currentBalanceAccount = accountRepository.findAll().stream()
+                .filter(a -> a.getName().equals("CurrentBalance"))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Mortgage account not found"));
+                .orElseThrow(() -> new RuntimeException("CurrentBalance account not found"));
 
-        Account offsetAccount = accountRepository.findAll().stream()
-                .filter(a -> a.getType() == AccountType.OFFSET)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Offset account not found"));
-
-        // 取得最新按揭總覽
-        MortgageSummary summary = mortgageSummaryRepository.findTopByOrderByReportDateDesc();
-        if (summary == null) {
-            summary = MortgageSummary.builder()
-                    .reportDate(LocalDate.now())
-                    .mortgageBalance(mortgageAccount.getCurrentBalance())
-                    .offsetTotal(offsetAccount.getCurrentBalance())
-                    .parentsInOffset(BigDecimal.ZERO)
-                    .totalParentContribution(new BigDecimal("1200000"))
-                    .build();
-            summary = mortgageSummaryRepository.save(summary);
-        }
-
-        BigDecimal effectiveDebt = summary.getEffectiveDebt() != null
-                ? summary.getEffectiveDebt()
-                : mortgageAccount.getCurrentBalance().subtract(offsetAccount.getCurrentBalance());
-
-        // ==================== B方案：計算個人剩餘金額 ====================
+        // 計算個人貢獻
         List<DashboardResponse.PersonalBalance> personalBalances = calculatePersonalBalances();
 
         return DashboardResponse.builder()
-                .mortgageBalance(mortgageAccount.getCurrentBalance())
-                .offsetTotal(offsetAccount.getCurrentBalance())
-                .parentsInOffset(summary.getParentsInOffset())
-                .effectiveDebt(effectiveDebt)
-                .totalParentContribution(summary.getTotalParentContribution())
-                .thisMonthCoupleTransfer(BigDecimal.ZERO)
-                .personalBalances(personalBalances)   // ← 新增
+                .currentBalance(currentBalanceAccount.getCurrentBalance())
+                .personalBalances(personalBalances)
                 .build();
     }
 
@@ -88,19 +60,6 @@ public class DashboardService {
                         .balance(contributionMap.getOrDefault(user.getId(), BigDecimal.ZERO))
                         .build())
                 .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public void updateMortgageSummary(BigDecimal mortgageBalance, BigDecimal offsetTotal,
-                                      BigDecimal parentsInOffset, BigDecimal parentContribution) {
-        MortgageSummary summary = MortgageSummary.builder()
-                .reportDate(LocalDate.now())
-                .mortgageBalance(mortgageBalance)
-                .offsetTotal(offsetTotal)
-                .parentsInOffset(parentsInOffset)
-                .totalParentContribution(parentContribution)
-                .build();
-        mortgageSummaryRepository.save(summary);
     }
 
     /**
