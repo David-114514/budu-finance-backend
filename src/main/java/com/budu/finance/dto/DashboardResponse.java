@@ -14,8 +14,8 @@ import java.util.List;
 @AllArgsConstructor
 public class DashboardResponse {
 
-    private BigDecimal currentBalance;           // 當前餘額（最重要）
-    private List<PersonalBalance> personalBalances; // 個人貢獻
+    private BigDecimal currentBalance;           // 當前按揭戶口餘額（本系統最核心的即時數字）
+    private List<PersonalBalance> personalBalances; // 每位家庭成員的歷史貢獻總額（僅正數流入計入，支出不影響）
 
     @Data
     @Builder

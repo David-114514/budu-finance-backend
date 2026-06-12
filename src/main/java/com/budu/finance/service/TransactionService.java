@@ -14,6 +14,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
@@ -52,11 +55,9 @@ public class TransactionService {
         return toResponse(transaction);
     }
 
-    public List<TransactionResponse> getTransactionsByDateRange(LocalDate start, LocalDate end) {
-        return transactionRepository.findByDateBetweenOrderByDateDesc(start, end)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    public Page<TransactionResponse> getTransactionsByDateRange(LocalDate start, LocalDate end, Pageable pageable) {
+        return transactionRepository.findByDateBetweenOrderByDateDesc(start, end, pageable)
+                .map(this::toResponse);
     }
 
     private TransactionResponse toResponse(Transaction t) {

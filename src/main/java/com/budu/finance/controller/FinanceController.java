@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -63,10 +67,13 @@ public class FinanceController {
     }
 
     @GetMapping("/transactions")
-    public ResponseEntity<List<TransactionResponse>> getTransactions(
+    public ResponseEntity<Page<TransactionResponse>> getTransactions(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
-        List<TransactionResponse> transactions = transactionService.getTransactionsByDateRange(start, end);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<TransactionResponse> transactions = transactionService.getTransactionsByDateRange(start, end, pageable);
         return ResponseEntity.ok(transactions);
     }
 
