@@ -27,12 +27,13 @@ public class Transaction {
     private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;                    // 操作者（丈夫/妻子）
+    @JoinColumn(name = "user_id")
+    private User user;                    // 貢獻者（僅存入類交易需要，支出為 null）
 
     private String description;
 
     @Column(precision = 10, scale = 2)
+    @Builder.Default
     private BigDecimal mortgageInterestSaved = BigDecimal.ZERO;
 
     @Column(name = "created_at", updatable = false)

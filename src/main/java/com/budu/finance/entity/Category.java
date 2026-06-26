@@ -21,9 +21,11 @@ public class Category {
     @Column(nullable = false)
     private CategoryType type;
 
+    @Builder.Default
     private String icon = "💰";
 
     @Column(name = "created_at", updatable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }
 

@@ -28,13 +28,11 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
-        // 建立交易記錄（已刪除 contributor 相關）
+        User user = resolveContributor(request, category);
+
         Transaction transaction = Transaction.builder()
                 .date(request.getDate())
                 .amount(request.getAmount())
@@ -60,6 +58,22 @@ public class TransactionService {
                 .map(this::toResponse);
     }
 
+    private User resolveContributor(TransactionRequest request, Category category) {
+        boolean isExpense = category.getType() == CategoryType.EXPENSE
+                || category.getType() == CategoryType.PARENT_REPAY;
+
+        if (isExpense) {
+            return null;
+        }
+
+        if (request.getUserId() == null) {
+            throw new RuntimeException("Contributor is required for income/transfer transactions");
+        }
+
+        return userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
     private TransactionResponse toResponse(Transaction t) {
         return TransactionResponse.builder()
                 .id(t.getId())
@@ -68,8 +82,8 @@ public class TransactionService {
                 .description(t.getDescription())
                 .categoryId(t.getCategory().getId())
                 .categoryName(t.getCategory().getName())
-                .userId(t.getUser().getId())
-                .userName(t.getUser().getName())
+                .userId(t.getUser() != null ? t.getUser().getId() : null)
+                .userName(t.getUser() != null ? t.getUser().getName() : null)
                 .mortgageInterestSaved(t.getMortgageInterestSaved())
                 .build();
     }

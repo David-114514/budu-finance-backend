@@ -26,6 +26,7 @@ public class User {
     private UserRole role;
 
     @Column(nullable = false, length = 20)
+    @Builder.Default
     private String password = "123456";
 }
 

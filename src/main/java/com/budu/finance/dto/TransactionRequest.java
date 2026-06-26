@@ -39,12 +39,12 @@ public class TransactionRequest {
     @NotNull
     private Long categoryId;
 
-    @NotNull
-    private Long userId;            // 操作者（丈夫或妻子）
+    private Long userId;            // 貢獻者（存入類必填，支出類不填）
 
     private Long contributorId;     // 父母貢獻時使用
 
     private String description;
 
+    @Builder.Default
     private BigDecimal mortgageInterestSaved = BigDecimal.ZERO;
 }

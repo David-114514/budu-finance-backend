@@ -126,4 +126,13 @@ public class FinanceController {
         List<Map<String, Object>> result = dashboardService.getMonthlyTransfer(start, end);
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/dashboard/monthly-expense")
+    public ResponseEntity<List<Map<String, Object>>> getMonthlyExpense(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+
+        List<Map<String, Object>> result = dashboardService.getMonthlyExpense(start, end);
+        return ResponseEntity.ok(result);
+    }
 }

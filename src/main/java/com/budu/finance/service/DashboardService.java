@@ -89,15 +89,31 @@ public class DashboardService {
      * 查詢指定日期範圍內「轉入按揭戶口」的總金額（按月分組）
      */
     public List<Map<String, Object>> getMonthlyTransfer(LocalDate start, LocalDate end) {
+        return getMonthlyByCategoryName(start, end, "轉入按揭戶口", false);
+    }
+
+    /**
+     * 查詢指定日期範圍內「按揭戶口支出」的總金額（按月分組，回傳正數方便圖表顯示）
+     */
+    public List<Map<String, Object>> getMonthlyExpense(LocalDate start, LocalDate end) {
+        return getMonthlyByCategoryName(start, end, "按揭戶口支出", true);
+    }
+
+    private List<Map<String, Object>> getMonthlyByCategoryName(
+            LocalDate start, LocalDate end, String categoryName, boolean useAbsoluteValue) {
+
         List<Transaction> transactions = transactionRepository.findByDateBetweenAndCategoryName(
-                start, end, "轉入按揭戶口"
+                start, end, categoryName
         );
 
-        // 按月份分組統計
         Map<String, BigDecimal> monthlyMap = transactions.stream()
                 .collect(Collectors.groupingBy(
                         t -> t.getDate().getYear() + "-" + String.format("%02d", t.getDate().getMonthValue()),
-                        Collectors.reducing(BigDecimal.ZERO, Transaction::getAmount, BigDecimal::add)
+                        Collectors.reducing(
+                                BigDecimal.ZERO,
+                                t -> useAbsoluteValue ? t.getAmount().abs() : t.getAmount(),
+                                BigDecimal::add
+                        )
                 ));
 
         return monthlyMap.entrySet().stream()
